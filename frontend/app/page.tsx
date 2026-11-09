@@ -7,13 +7,8 @@ import dynamic from 'next/dynamic';
 // Dynamically import NiftiViewer to avoid SSR issues
 const NiftiViewer = dynamic(() => import('./components/NiftiViewer'), { ssr: false });
 
-// Use the local Next.js proxy rewrite path
-// DEFINED ONCE AT COMPONENT SCOPE
-// const HF_SPACE_URL = "https://ai4all3dcnn-neuroscan-backend.hf.space";
-// const HF_SPACE_URL = "https://cooleschimo-neuroscan-backend.hf.space";
-// const HF_SPACE_URL = "http://127.0.0.1:7860";  // Local backend (only for local dev)
-const HF_SPACE_URL =
-  `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/api/gradio-proxy`;
+// Resolve in the browser when connecting, rather than at module evaluation.
+const connectModel = () => client(`${window.location.origin}/api/gradio-proxy`);
 
 interface AnalysisResult {
   predictions: [string, number][];
@@ -58,7 +53,7 @@ export default function Home() {
         setResult(null);
 
         try {
-            const app = await client(HF_SPACE_URL);
+            const app = await connectModel();
             console.log("Gradio client initialized.");
 
             const response = await app.predict("/predict", [file]) as any;
@@ -109,7 +104,7 @@ export default function Home() {
         const results: BatchResult[] = [];
 
         try {
-            const app = await client(HF_SPACE_URL);
+            const app = await connectModel();
             console.log("Gradio client initialized for batch processing.");
 
             for (let i = 0; i < files.length; i++) {
@@ -175,7 +170,7 @@ export default function Home() {
         setResultB(null);
 
         try {
-            const app = await client(HF_SPACE_URL);
+            const app = await connectModel();
             console.log("Gradio client initialized for comparison.");
 
             const [responseA, responseB] = await Promise.all([
